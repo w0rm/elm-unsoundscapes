@@ -30,11 +30,6 @@ resizeCircle circle dr =
   { circle | r <- circle.r + dr |> max 10 |> min 60 }
 
 
-matchCircle : Circle -> Circle -> Bool
-matchCircle c1 c2 =
-  not ((c1.x == c2.x) && (c1.y == c2.y) && (c1.r == c2.r))
-
-
 type alias Model =
   { currentCircle : Circle
   , circles : List Circle
@@ -72,7 +67,7 @@ update action model =
       , Effects.none
       )
     Remove circle ->
-      ( { model | circles <- List.filter (matchCircle circle) model.circles }
+      ( { model | circles <- List.filter ((/=) circle) model.circles }
       , Effects.none
       )
     SizeUp ->
