@@ -30,14 +30,6 @@ resizeCircle circle dr =
   { circle | r <- circle.r + dr |> max 10 |> min 60 }
 
 
-cloneCircle : Circle -> Circle
-cloneCircle circle =
-  { x = circle.x
-  , y = circle.y
-  , r = circle.r
-  }
-
-
 matchCircle : Circle -> Circle -> Bool
 matchCircle c1 c2 =
   not ((c1.x == c2.x) && (c1.y == c2.y) && (c1.r == c2.r))
@@ -76,7 +68,7 @@ update action model =
       , Effects.none
       )
     Add circle ->
-      ( { model | circles <- ((cloneCircle model.currentCircle) :: model.circles) }
+      ( { model | circles <- model.currentCircle :: model.circles }
       , Effects.none
       )
     Remove circle ->
