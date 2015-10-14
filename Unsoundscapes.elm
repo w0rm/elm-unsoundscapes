@@ -55,31 +55,26 @@ type Action
   | Noop
 
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
+update' : Action -> Model -> Model
+update' action model =
   case action of
     MoveCurrent (x, y) ->
-      ( { model | currentCircle <- moveCircle model.currentCircle x y }
-      , Effects.none
-      )
+      { model | currentCircle <- moveCircle model.currentCircle x y }
     Add circle ->
-      ( { model | circles <- model.currentCircle :: model.circles }
-      , Effects.none
-      )
+      { model | circles <- model.currentCircle :: model.circles }
     Remove circle ->
-      ( { model | circles <- List.filter ((/=) circle) model.circles }
-      , Effects.none
-      )
+      { model | circles <- List.filter ((/=) circle) model.circles }
     SizeUp ->
-      ( { model | currentCircle <- resizeCircle model.currentCircle 5 }
-      , Effects.none
-      )
+      { model | currentCircle <- resizeCircle model.currentCircle 5 }
     SizeDown ->
-      ( { model | currentCircle <- resizeCircle model.currentCircle -5 }
-      , Effects.none
-      )
+      { model | currentCircle <- resizeCircle model.currentCircle -5 }
     Noop ->
-      (model, Effects.none)
+      model
+
+
+update : Action -> Model -> (Model, Effects Action)
+update action model =
+  ((update' action model), Effects.none)
 
 
 keyDown : Int -> Signal Bool
