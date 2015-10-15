@@ -6,8 +6,9 @@ import Html.Attributes exposing (style, src)
 import Html.Events exposing (onClick)
 import Keyboard
 import Mouse
-import Signal exposing ((<~), sampleOn)
+import Signal exposing ((<~), (~), sampleOn)
 import Time exposing (fps)
+import Window
 
 
 -- MODEL
@@ -50,6 +51,7 @@ type Action
   = Remove Circle
   | Add Circle
   | MoveCurrent (Int, Int)
+  | Offset (Int, Int)
   | SizeUp
   | SizeDown
   | Noop
@@ -84,10 +86,14 @@ keyDown c =
 
 inputs : List (Signal Action)
 inputs =
-  [ MoveCurrent <~ Mouse.position
-  , always SizeUp <~ keyDown 221
-  , always SizeDown <~ keyDown 219
-  ]
+  let
+    offsetBy (x1, y1) (x2, y2) = (x2 - x1, y2 - y1)
+    imageOffset = offsetBy (780, 680) <~ Window.dimensions
+  in
+    [ MoveCurrent <~ (offsetBy <~ imageOffset ~ Mouse.position)
+    , always SizeUp <~ keyDown 221
+    , always SizeDown <~ keyDown 219
+    ]
 
 
 -- VIEW
@@ -119,9 +125,17 @@ renderCircle address isCurrent circle =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div []
-  [ img
-    [ src "images/bald.jpg" ] []
-  , renderCircle address True model.currentCircle
-  , div [] (List.map (renderCircle address False) model.circles)
+  div
+  [ style
+    [ ("background-image", "url(../images/bald.jpg)")
+    , ("bottom", "0")
+    , ("height", toPx 680)
+    , ("overflow", "hidden")
+    , ("position", "absolute")
+    , ("right", "0")
+    , ("width", toPx 780)
+    ]
   ]
+  ( renderCircle address True model.currentCircle ::
+    List.map (renderCircle address False) model.circles
+  )
