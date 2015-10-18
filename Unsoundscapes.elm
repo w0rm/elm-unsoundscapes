@@ -31,7 +31,7 @@ moveCircle circle x y =
 
 resizeCircle : Circle -> Int -> Circle
 resizeCircle circle dr =
-  { circle | r <- circle.r + dr |> max 10 |> min 60 }
+  { circle | r <- circle.r + dr |> max 10 |> min 120 }
 
 
 listToTuple3 : List Int -> (Int, Int, Int)
