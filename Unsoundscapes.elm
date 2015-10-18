@@ -7,8 +7,11 @@ import Html.Events exposing (onClick)
 import Keyboard
 import Mouse
 import Signal exposing ((<~), (~), sampleOn)
+import String
 import Time exposing (fps)
 import Window
+import History
+import Task
 
 
 -- MODEL
@@ -31,6 +34,64 @@ resizeCircle circle dr =
   { circle | r <- circle.r + dr |> max 10 |> min 60 }
 
 
+listToTuple3 : List Int -> (Int, Int, Int)
+listToTuple3 l =
+  let
+    el1 = l |> List.head
+    el2 = l |> List.drop 1 |> List.head
+    el3 = l |> List.drop 2 |> List.head
+  in
+    ( Maybe.withDefault 0 el1
+    , Maybe.withDefault 0 el2
+    , Maybe.withDefault 0 el3
+    )
+
+
+tuple3ToList : (Int, Int, Int) -> List Int
+tuple3ToList (a, b, c) =
+  [a, b, c]
+
+
+coordsToCircle : (Int, Int, Int) -> Circle
+coordsToCircle (x, y, r) =
+  Circle (x + r * 5) (y + r * 5) (r * 5)
+
+
+circleToCoords : Circle -> (Int, Int, Int)
+circleToCoords circle =
+  (circle.x - circle.r, circle.y - circle.r, circle.r // 5)
+
+
+coordsToCircles : List Int -> List Circle
+coordsToCircles list =
+  if List.length list >= 3
+  then (
+    List.take 3 list
+      |> listToTuple3
+      |> coordsToCircle
+  ) :: coordsToCircles (List.drop 3 list)
+  else []
+
+
+circlesFromHash : String -> List Circle
+circlesFromHash hash =
+  String.dropLeft 1 hash
+    |> String.split ","
+    |> List.map (String.toInt >> Result.toMaybe >> Maybe.withDefault 0)
+    |> coordsToCircles
+
+
+hashFromCircles : List Circle -> String
+hashFromCircles circles =
+  circles
+    |> List.map (circleToCoords >> tuple3ToList)
+    |> List.concat
+    |> List.map toString
+    |> List.intersperse ","
+    |> (::) "#"
+    |> List.foldr (++) ""
+
+
 type alias Model =
   { currentCircle : Circle
   , circles : List Circle
@@ -51,32 +112,38 @@ type Action
   = Remove Circle
   | Add Circle
   | MoveCurrent (Int, Int)
-  | Offset (Int, Int)
   | SizeUp
   | SizeDown
+  | LoadCircles String
   | Noop
 
 
-update' : Action -> Model -> Model
-update' action model =
-  case action of
-    MoveCurrent (x, y) ->
-      { model | currentCircle <- moveCircle model.currentCircle x y }
-    Add circle ->
-      { model | circles <- model.currentCircle :: model.circles }
-    Remove circle ->
-      { model | circles <- List.filter ((/=) circle) model.circles }
-    SizeUp ->
-      { model | currentCircle <- resizeCircle model.currentCircle 5 }
-    SizeDown ->
-      { model | currentCircle <- resizeCircle model.currentCircle -5 }
-    Noop ->
-      model
+withHashChange : Model -> (Model, Effects Action)
+withHashChange model =
+  ( model
+  , History.setPath (hashFromCircles model.circles)
+      |> Task.map (always Noop)
+      |> Effects.task
+  )
 
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-  ((update' action model), Effects.none)
+  case action of
+    LoadCircles hash ->
+      (,) { model | circles <- circlesFromHash hash} Effects.none
+    MoveCurrent (x, y) ->
+      (,) { model | currentCircle <- moveCircle model.currentCircle x y } Effects.none
+    Add circle ->
+      withHashChange { model | circles <- model.currentCircle :: model.circles }
+    Remove circle ->
+      withHashChange { model | circles <- List.filter ((/=) circle) model.circles }
+    SizeUp ->
+      (,) { model | currentCircle <- resizeCircle model.currentCircle 5 } Effects.none
+    SizeDown ->
+      (,) { model | currentCircle <- resizeCircle model.currentCircle -5 } Effects.none
+    Noop ->
+      (model, Effects.none)
 
 
 keyDown : Int -> Signal Bool
@@ -90,7 +157,8 @@ inputs =
     offsetBy (x1, y1) (x2, y2) = (x2 - x1, y2 - y1)
     imageOffset = offsetBy (780, 680) <~ Window.dimensions
   in
-    [ MoveCurrent <~ (offsetBy <~ imageOffset ~ Mouse.position)
+    [ LoadCircles <~ History.hash -- has to be the first element for initial state
+    , MoveCurrent <~ (offsetBy <~ imageOffset ~ Mouse.position)
     , always SizeUp <~ keyDown 221
     , always SizeDown <~ keyDown 219
     ]

@@ -21,3 +21,8 @@ app =
 main : Signal Html
 main =
   app.html
+
+
+port tasks : Signal (Task.Task Never ())
+port tasks =
+  app.tasks
