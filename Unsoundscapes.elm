@@ -2,7 +2,7 @@ module Unsoundscapes (inputs, init, update, view, Model) where
 
 import Effects exposing (Effects)
 import Html exposing (img, div, text, Html)
-import Html.Attributes exposing (style, src)
+import Html.Attributes exposing (style, src, class)
 import Html.Events exposing (onClick)
 import Keyboard
 import Mouse
@@ -176,8 +176,9 @@ renderCircle : Signal.Address Action -> Bool -> Circle -> Html
 renderCircle address isCurrent circle =
   div [
     onClick address (if isCurrent then Add circle else Remove circle)
+  , class (if isCurrent then "" else "hair")
   , style
-    [ ("background-image", "url(../images/hair.jpg)")
+    [ ("background-image", "url(/images/hair.jpg)")
     , ("background-repeat", "no-repeat")
     , ("border-radius", "50%")
     , ("position", "absolute")
@@ -195,7 +196,7 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div
   [ style
-    [ ("background-image", "url(../images/bald.jpg)")
+    [ ("background-image", "url(/images/bald.jpg)")
     , ("bottom", "0")
     , ("height", toPx 680)
     , ("overflow", "hidden")
