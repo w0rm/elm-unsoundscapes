@@ -34,57 +34,26 @@ resizeCircle circle dr =
   { circle | r <- circle.r + dr |> max 10 |> min 120 }
 
 
-listToTuple3 : List Int -> (Int, Int, Int)
-listToTuple3 l =
-  let
-    el1 = l |> List.head
-    el2 = l |> List.drop 1 |> List.head
-    el3 = l |> List.drop 2 |> List.head
-  in
-    ( Maybe.withDefault 0 el1
-    , Maybe.withDefault 0 el2
-    , Maybe.withDefault 0 el3
-    )
-
-
-tuple3ToList : (Int, Int, Int) -> List Int
-tuple3ToList (a, b, c) =
-  [a, b, c]
-
-
-coordsToCircle : (Int, Int, Int) -> Circle
-coordsToCircle (x, y, r) =
-  Circle (x + r * 5) (y + r * 5) (r * 5)
-
-
-circleToCoords : Circle -> (Int, Int, Int)
-circleToCoords circle =
-  (circle.x - circle.r, circle.y - circle.r, circle.r // 5)
-
-
-coordsToCircles : List Int -> List Circle
-coordsToCircles list =
-  if List.length list >= 3
-  then (
-    List.take 3 list
-      |> listToTuple3
-      |> coordsToCircle
-  ) :: coordsToCircles (List.drop 3 list)
-  else []
-
-
 circlesFromHash : String -> List Circle
 circlesFromHash hash =
-  String.dropLeft 1 hash
-    |> String.split ","
-    |> List.map (String.toInt >> Result.toMaybe >> Maybe.withDefault 0)
-    |> coordsToCircles
+  let
+    coordsToCircles list =
+      case list of
+        x :: y :: r :: l ->
+          Circle (x + r * 5) (y + r * 5) (r * 5) :: coordsToCircles l
+        _ ->
+          []
+  in
+    String.dropLeft 1 hash
+      |> String.split ","
+      |> List.map (String.toInt >> Result.toMaybe >> Maybe.withDefault 0)
+      |> coordsToCircles
 
 
 hashFromCircles : List Circle -> String
 hashFromCircles circles =
   circles
-    |> List.map (circleToCoords >> tuple3ToList)
+    |> List.map (\{x, y, r} -> [x - r, y - r, r // 5])
     |> List.concat
     |> List.map toString
     |> List.intersperse ","
