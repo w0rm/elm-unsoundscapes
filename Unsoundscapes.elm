@@ -79,10 +79,9 @@ init r =
 
 type Action
   = Remove Circle
-  | Add Circle
+  | AddCurrent
   | MoveCurrent (Int, Int)
-  | SizeUp
-  | SizeDown
+  | ResizeCurrent Int
   | LoadCircles String
   | Noop
 
@@ -103,14 +102,12 @@ update action model =
       (,) { model | circles <- circlesFromHash hash} Effects.none
     MoveCurrent (x, y) ->
       (,) { model | currentCircle <- moveCircle model.currentCircle x y } Effects.none
-    Add circle ->
+    AddCurrent ->
       withHashChange { model | circles <- model.currentCircle :: model.circles }
     Remove circle ->
       withHashChange { model | circles <- List.filter ((/=) circle) model.circles }
-    SizeUp ->
-      (,) { model | currentCircle <- resizeCircle model.currentCircle 5 } Effects.none
-    SizeDown ->
-      (,) { model | currentCircle <- resizeCircle model.currentCircle -5 } Effects.none
+    ResizeCurrent dr ->
+      (,) { model | currentCircle <- resizeCircle model.currentCircle dr } Effects.none
     Noop ->
       (model, Effects.none)
 
@@ -128,8 +125,8 @@ inputs =
   in
     [ LoadCircles <~ History.hash -- has to be the first element for initial state
     , MoveCurrent <~ (offsetBy <~ imageOffset ~ Mouse.position)
-    , always SizeUp <~ keyDown 221
-    , always SizeDown <~ keyDown 219
+    , always (ResizeCurrent 5) <~ keyDown 221
+    , always (ResizeCurrent -5) <~ keyDown 219
     ]
 
 
@@ -144,7 +141,7 @@ toPx val =
 renderCircle : Signal.Address Action -> Bool -> Circle -> Html
 renderCircle address isCurrent circle =
   div [
-    onClick address (if isCurrent then Add circle else Remove circle)
+    onClick address (if isCurrent then AddCurrent else Remove circle)
   , class (if isCurrent then "" else "hair")
   , style
     [ ("background-image", "url(/images/hair.jpg)")
