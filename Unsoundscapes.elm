@@ -6,7 +6,7 @@ import Html.Attributes exposing (style, src, class)
 import Html.Events exposing (onClick)
 import Keyboard
 import Mouse
-import Signal exposing ((<~), (~), sampleOn)
+import Signal
 import String
 import Time exposing (fps)
 import Window
@@ -26,12 +26,12 @@ type alias Circle =
 
 moveCircle : Circle -> Int -> Int -> Circle
 moveCircle circle x y =
-  { circle | x <- x, y <- y }
+  { circle | x = x, y = y }
 
 
 resizeCircle : Circle -> Int -> Circle
 resizeCircle circle dr =
-  { circle | r <- circle.r + dr |> max 10 |> min 120 }
+  { circle | r = circle.r + dr |> max 10 |> min 120 }
 
 
 circlesFromHash : String -> List Circle
@@ -99,15 +99,15 @@ update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     LoadCircles hash ->
-      (,) { model | circles <- circlesFromHash hash} Effects.none
+      (,) { model | circles = circlesFromHash hash} Effects.none
     MoveCurrent (x, y) ->
-      (,) { model | currentCircle <- moveCircle model.currentCircle x y } Effects.none
+      (,) { model | currentCircle = moveCircle model.currentCircle x y } Effects.none
     AddCurrent ->
-      withHashChange { model | circles <- model.currentCircle :: model.circles }
+      withHashChange { model | circles = model.currentCircle :: model.circles }
     Remove circle ->
-      withHashChange { model | circles <- List.filter ((/=) circle) model.circles }
+      withHashChange { model | circles = List.filter ((/=) circle) model.circles }
     ResizeCurrent dr ->
-      (,) { model | currentCircle <- resizeCircle model.currentCircle dr } Effects.none
+      (,) { model | currentCircle = resizeCircle model.currentCircle dr } Effects.none
     Noop ->
       (model, Effects.none)
 
@@ -121,12 +121,12 @@ inputs : List (Signal Action)
 inputs =
   let
     offsetBy (x1, y1) (x2, y2) = (x2 - x1, y2 - y1)
-    imageOffset = offsetBy (780, 680) <~ Window.dimensions
+    imageOffset = Signal.map (offsetBy (780, 680)) Window.dimensions
   in
-    [ LoadCircles <~ History.hash -- has to be the first element for initial state
-    , MoveCurrent <~ (offsetBy <~ imageOffset ~ Mouse.position)
-    , always (ResizeCurrent 5) <~ keyDown 221
-    , always (ResizeCurrent -5) <~ keyDown 219
+    [ Signal.map LoadCircles History.hash -- has to be the first element for initial state
+    , Signal.map MoveCurrent (Signal.map2 offsetBy imageOffset Mouse.position)
+    , Signal.map (always (ResizeCurrent 5)) (keyDown 221)
+    , Signal.map (always (ResizeCurrent -5)) (keyDown 219)
     ]
 
 
