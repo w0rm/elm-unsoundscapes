@@ -11,7 +11,7 @@ app : { html : Signal Html
       }
 app =
   StartApp.start
-    { init = init 50
+    { init = init 50 locationHash
     , update = update
     , view = view
     , inputs = inputs
@@ -21,6 +21,9 @@ app =
 main : Signal Html
 main =
   app.html
+
+
+port locationHash : String
 
 
 port tasks : Signal (Task.Task Never ())

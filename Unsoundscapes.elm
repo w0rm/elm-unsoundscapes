@@ -67,9 +67,9 @@ type alias Model =
   }
 
 
-init : Int -> (Model, Effects Action)
-init r =
-  ( Model (Circle 0 0 r) []
+init : Int -> String -> (Model, Effects Action)
+init r hash =
+  ( Model (Circle 0 0 r) (circlesFromHash hash)
   , Effects.none
   )
 
@@ -123,7 +123,7 @@ inputs =
     offsetBy (x1, y1) (x2, y2) = (x2 - x1, y2 - y1)
     imageOffset = Signal.map (offsetBy (780, 680)) Window.dimensions
   in
-    [ Signal.map LoadCircles History.hash -- has to be the first element for initial state
+    [ Signal.map LoadCircles History.hash
     , Signal.map MoveCurrent (Signal.map2 offsetBy imageOffset Mouse.position)
     , Signal.map (always (ResizeCurrent 5)) (keyDown 221)
     , Signal.map (always (ResizeCurrent -5)) (keyDown 219)
