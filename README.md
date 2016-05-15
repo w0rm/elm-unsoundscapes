@@ -1,5 +1,7 @@
 # elm-unsoundscapes
 
+Note: this project uses an old version of Elm 0.16.
+
 This is an attempt to recreate my [homepage](http://unsoundscapes.com) in [elm](http://elm-lang.org/) while learning the language.
 
 ## Instructions to run
